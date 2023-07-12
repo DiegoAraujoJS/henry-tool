@@ -16,21 +16,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type CommitterInfo struct {
-	CommitCount int
-	FilesChanged map[string]int
-}
-
 // chartCmd represents the chart command
-var chartCmd = &cobra.Command{
-	Use:   "chart",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+var commitsCmd = &cobra.Command{
+	Use:   "commits",
+	Short: "Este comando muestra cuantos commits tiene cada persona",
+	Long: `Este comando muestra cuantos commits tiene cada persona`,
     Run: func(cmd *cobra.Command, args []string) {
         // Open the repository.
         repo, err := pkg.OpenRepositoryAtRoot()
@@ -40,63 +30,10 @@ to quickly create a Cobra application.`,
             return
         }
 
-        // Get the HEAD reference.
-        ref, err := repo.Head()
-        if err != nil {
-            fmt.Printf("Failed to get HEAD: %v\n", err)
-            return
-        }
-
         // Get an iterator over the repository's commit history.
-        iter, err := repo.Log(&git.LogOptions{From: ref.Hash()})
+        iter, err := repo.Log(&git.LogOptions{All: true})
         if err != nil {
             fmt.Printf("Failed to get log: %v\n", err)
-            return
-        }
-
-
-        
-
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        if err != nil {
-            fmt.Printf("Failed to iterate over commits: %v\n", err)
             return
         }
 
@@ -133,7 +70,6 @@ to quickly create a Cobra application.`,
             }
             displayCommitters(commitsByCommitter, committers[start:end])
         }
-
     },
 }
 
@@ -151,16 +87,20 @@ func displayCommitters(commitsByCommitter map[string]int, committers []string) {
 	}
 
 	// Add a single row with the commit counts.
-	table.Append(append([]string{"Commits"}, counts...))
+    var rows = [][]string{
+        append([]string{"Commits"}, counts...),
+    }
+    for _, row := range rows {
+        table.Append(row)
+    }
 	table.Render() // Send
-
 }
 
 
 
 
 func init() {
-	rootCmd.AddCommand(chartCmd)
+	rootCmd.AddCommand(commitsCmd)
 
 	// Here you will define your flags and configuration settings.
 
