@@ -8,7 +8,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
-// This function is thought over the fact that the most recent commit of a git repository is one of its leafs. The most recent before that is either one of the parents of the most recent one or one of the leafs of the repository, and so on. It will run the callback for all commits posterior to "since", in historical order according to their creation time.
+// This function will traverse the git history from the most recent commit to the oldest one. It will run the callback for each commit and stop when the callback returns an error or when the commit's creation time is posterior to "since".
 func LogTimeline(repo *git.Repository, since *time.Time, cb func (c *object.Commit) error) error {
     // 1. Define the set of leafs
     var set = map[plumbing.Hash]*object.Commit{}
@@ -36,7 +36,7 @@ func LogTimeline(repo *git.Repository, since *time.Time, cb func (c *object.Comm
     }
 
     // 3. If the commit found in 2. has no parents or its creation time is posterior to "since", return. 
-    if most_recent.NumParents() == 0 || (since != nil && since.After(most_recent.Committer.When)) {
+    if most_recent.NumParents() == 0 || since.After(most_recent.Committer.When) {
         return nil
     }
 

@@ -6,9 +6,52 @@ package cmd
 import (
 	"os"
 
+	"github.com/DiegoAraujoJS/henry-tool/utils"
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
 
+// Function display is a generic function to display a map of committer to a value. It will display the committers in alphabetical order and will write on each cell the value of the passed function.
+func display [T any] (sum_map map[string]T, row_name string, cell_format func(T) string) {
+    var committers []string
+    for committer := range sum_map {
+        committers = append(committers, committer)
+    }
+    committers = utils.MergeSort(committers, func(a string, b string) bool {
+        return a < b
+    })
+    // Maximum number of committers to show in each row
+    const maxCommittersPerRow = 5
+
+    for start := 0; start < len(committers); start += maxCommittersPerRow {
+        end := start + maxCommittersPerRow
+        if end > len(committers) {
+            end = len(committers)
+        }
+
+        sliced_committers := committers[start:end]
+        table := tablewriter.NewWriter(os.Stdout)
+        // Set the header to the sliced_committers.
+        table.SetHeader(append([]string{"Row"}, sliced_committers...))
+
+        // Get the commit counts for each committer in the same order as the header.
+        var counts []string
+        for _, committer := range sliced_committers {
+            count := sum_map[committer]
+            counts = append(counts, cell_format(count))
+        }
+
+        // Add a single row with the commit counts.
+        var rows = [][]string{
+            append([]string{row_name}, counts...),
+        }
+        for _, row := range rows {
+            table.Append(row)
+        }
+        table.Render() // Send
+
+    }
+}
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "henry-tool",

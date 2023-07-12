@@ -5,14 +5,11 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/DiegoAraujoJS/henry-tool/pkg"
-	"github.com/DiegoAraujoJS/henry-tool/utils"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
 
@@ -42,7 +39,7 @@ var commitsCmd = &cobra.Command{
 
         // Iterate over each commit.
         err = iter.ForEach(func(c *object.Commit) error {
-            committer := c.Committer.String()
+            committer := c.Committer.Name
             commitsByCommitter[committer]++
             return nil
         })
@@ -51,53 +48,9 @@ var commitsCmd = &cobra.Command{
             return
         }
 
-        // Get a sorted slice of the committers.
-        var committers []string
-        for committer := range commitsByCommitter {
-            committers = append(committers, committer)
-        }
-        committers = utils.MergeSort(committers, func(a string, b string) bool {
-            return a < b
-        })
-
-        // Maximum number of committers to show in each row
-        const maxCommittersPerRow = 5
-
-        for start := 0; start < len(committers); start += maxCommittersPerRow {
-            end := start + maxCommittersPerRow
-            if end > len(committers) {
-                end = len(committers)
-            }
-            displayCommitters(commitsByCommitter, committers[start:end])
-        }
+        display(commitsByCommitter, "Commits", strconv.Itoa)
     },
 }
-
-
-func displayCommitters(commitsByCommitter map[string]int, committers []string) {
-	table := tablewriter.NewWriter(os.Stdout)
-	// Set the header to the committers.
-	table.SetHeader(append([]string{"Row"}, committers...))
-
-	// Get the commit counts for each committer in the same order as the header.
-	var counts []string
-	for _, committer := range committers {
-		count := commitsByCommitter[committer]
-		counts = append(counts, strconv.Itoa(count))
-	}
-
-	// Add a single row with the commit counts.
-    var rows = [][]string{
-        append([]string{"Commits"}, counts...),
-    }
-    for _, row := range rows {
-        table.Append(row)
-    }
-	table.Render() // Send
-}
-
-
-
 
 func init() {
 	rootCmd.AddCommand(commitsCmd)

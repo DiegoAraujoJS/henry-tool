@@ -13,6 +13,26 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func listAllCommitsDiff(c *object.Commit) error {
+    c.Parents().ForEach(func(parent *object.Commit) error {
+        diff, err := parent.Patch(c)
+
+        if err != nil {
+            fmt.Printf("Failed to get diff: %v\n", err)
+        }
+
+        stats := diff.Stats()
+
+        fmt.Printf("Hash: %v, Author: %v, Date: %v\n",c.Hash, c.Author.Name, c.Author.When)
+        for _, s := range stats {
+            fmt.Printf("\tFile: %v, Additions: %v, Deletions: %v\n", s.Name, s.Addition, s.Deletion)
+        }
+
+        return nil
+    })
+    return nil
+}
+
 // diffCmd represents the diff command
 var diffCmd = &cobra.Command{
 	Use:   "diff",
@@ -26,27 +46,44 @@ var diffCmd = &cobra.Command{
             return
         }
 
-        yesterday := time.Now().AddDate(0, 0, -1)
+        yesterday := time.Now().Add(-24 * time.Hour)
 
-        utils.LogTimeline(repo, &yesterday, func(c *object.Commit) error {
-            c.Parents().ForEach(func(parent *object.Commit) error {
-                diff, err := parent.Patch(c)
+        if wide, _ := cmd.Flags().GetBool("wide"); wide {
+            utils.LogTimeline(repo, &yesterday, listAllCommitsDiff)
+        } else {
+            user_additions_deletions := map[string][2]int{}
 
-                if err != nil {
-                    fmt.Printf("Failed to get diff: %v\n", err)
-                }
+            utils.LogTimeline(repo, &yesterday, func (c *object.Commit) error {
+                c.Parents().ForEach(func(parent *object.Commit) error {
+                    diff, err := parent.Patch(c)
 
-                stats := diff.Stats()
+                    if err != nil {
+                        fmt.Printf("Failed to get diff: %v\n", err)
+                    }
 
-                fmt.Printf("Hash: %v, Author: %v, Date: %v\n",c.Hash, c.Author.Name, c.Author.When)
-                for _, s := range stats {
-                    fmt.Printf("\tFile: %v, Additions: %v, Deletions: %v\n", s.Name, s.Addition, s.Deletion)
-                }
+                    stats := diff.Stats()
 
+                    for _, s := range stats {
+                        if s.Name == "package-lock.json" {
+                            continue
+                        }
+                        if value, ok := user_additions_deletions[c.Author.Name]; !ok {
+                            user_additions_deletions[c.Author.Name] = [2]int{0, 0}
+                        } else {
+                            user_additions_deletions[c.Author.Name] = [2]int{value[0] + s.Addition, value[1] + s.Deletion}
+                        }
+                    }
+
+                    return nil
+                })
                 return nil
             })
-            return nil
-        })
+
+            display(user_additions_deletions, "Cambios", func(count [2]int) string {
+                return fmt.Sprintf("Additions %d\nDeletions %d", count[0], count[1])
+            })
+
+        }
 
         if err != nil {
             fmt.Printf("Failed to iterate over commits: %v\n", err)
@@ -54,6 +91,7 @@ var diffCmd = &cobra.Command{
         }
 	},
 }
+
 
 func init() {
 	rootCmd.AddCommand(diffCmd)
@@ -66,5 +104,5 @@ func init() {
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// diffCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	diffCmd.Flags().BoolP("wide", "w", false, "Mostrar por cada commit los files modificados y las líneas agregadas y eliminadas")
 }
