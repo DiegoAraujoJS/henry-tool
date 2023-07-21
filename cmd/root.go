@@ -21,7 +21,7 @@ func display [T any] (sum_map map[string]T, row_name string, cell_format func(T)
         return a < b
     })
     // Maximum number of committers to show in each row
-    const maxCommittersPerRow = 5
+    const maxCommittersPerRow = 2
 
     for start := 0; start < len(committers); start += maxCommittersPerRow {
         end := start + maxCommittersPerRow
@@ -77,15 +77,6 @@ func Execute() {
 }
 
 func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.henry-tool.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 
