@@ -55,6 +55,7 @@ var commitsCmd = &cobra.Command{
 }
 
 func init() {
+    commitsCmd.Flags().Duration("since", 24 * time.Hour, "Mostrar los commits desde hace un día")
 	rootCmd.AddCommand(commitsCmd)
 
 	// Here you will define your flags and configuration settings.
