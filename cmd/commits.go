@@ -6,9 +6,10 @@ package cmd
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/DiegoAraujoJS/henry-tool/pkg"
-	"github.com/go-git/go-git/v5"
+	"github.com/DiegoAraujoJS/henry-tool/utils"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/spf13/cobra"
 )
@@ -27,18 +28,19 @@ var commitsCmd = &cobra.Command{
             return
         }
 
-        // Get an iterator over the repository's commit history.
-        iter, err := repo.Log(&git.LogOptions{All: true})
+        since, err := cmd.Flags().GetDuration("since")
+        var yesterday *time.Time
         if err != nil {
-            fmt.Printf("Failed to get log: %v\n", err)
+            fmt.Printf("Failed to get duration: %v\n", err)
             return
         }
+        if since != 0 {
+            yst := time.Now().Add(-since)
+            yesterday = &yst
+        }
 
-        // Map to store the committer and their corresponding commit count.
         commitsByCommitter := make(map[string]int)
-
-        // Iterate over each commit.
-        err = iter.ForEach(func(c *object.Commit) error {
+        err = utils.LogTimeline(repo, yesterday, func(c *object.Commit) error {
             committer := c.Committer.Name
             commitsByCommitter[committer]++
             return nil

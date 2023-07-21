@@ -36,7 +36,7 @@ func LogTimeline(repo *git.Repository, since *time.Time, cb func (c *object.Comm
     }
 
     // 3. If the commit found in 2. has no parents or its creation time is posterior to "since", return. 
-    if most_recent.NumParents() == 0 || since.After(most_recent.Committer.When) {
+    if most_recent.NumParents() == 0 || (since != nil && since.After(most_recent.Committer.When)) {
         return nil
     }
 
